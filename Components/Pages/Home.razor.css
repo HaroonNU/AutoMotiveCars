@@ -1,0 +1,107 @@
+.welcome-container {
+    background: transparent;
+    color: #2c3e50;
+    min-height: 80vh;
+    padding: 3rem 2rem;
+    text-align: center;
+}
+
+.hero-section {
+    margin-bottom: 4rem;
+}
+
+.company-name {
+    font-size: 3.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    letter-spacing: 1px;
+}
+
+.tagline {
+    font-size: 1.2rem;
+    color: #6c757d;
+    margin-bottom: 0;
+    font-weight: 400;
+}
+
+.user-welcome {
+    font-size: 1rem;
+    color: #3498db;
+    margin-top: 10px;
+    font-weight: 500;
+}
+
+.contact-info {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-bottom: 4rem;
+    flex-wrap: wrap;
+}
+
+.info-card {
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    padding: 2rem;
+    min-width: 220px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.info-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.info-card h3 {
+    color: #3498db;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.info-card p {
+    margin: 0.5rem 0;
+    font-size: 0.95rem;
+    color: #495057;
+    line-height: 1.4;
+}
+
+.welcome-message {
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    padding: 2.5rem;
+    max-width: 650px;
+    margin: 0 auto;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.welcome-message p {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin: 0;
+    color: #495057;
+    font-weight: 400;
+}
+
+@media (max-width: 768px) {
+    .company-name {
+        font-size: 2.5rem;
+    }
+    
+    .contact-info {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .welcome-container {
+        padding: 2rem 1rem;
+    }
+    
+    .info-card {
+        min-width: 280px;
+    }
+}

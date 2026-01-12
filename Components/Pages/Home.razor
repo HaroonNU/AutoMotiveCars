@@ -1,0 +1,204 @@
+@page "/"
+@using AutoMotiveProject.cs.Services
+@using AutoMotiveProject.cs.Models
+@inject AuthStateService AuthState
+@inject InvoiceService InvoiceService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+@if (!AuthState.IsAuthenticated)
+{
+    <script>window.location.href = '/login';</script>
+}
+else
+{
+    <PageTitle>Mama Autos - Welcome</PageTitle>
+
+    <div class="welcome-container card">
+        <!-- Profile Dropdown -->
+        <div class="profile-section">
+            <button class="profile-btn-home" @onclick="Logout">
+                👤 Logout
+            </button>
+        </div>
+
+        <div class="hero-section">
+            <h1 class="company-name">MAMA AUTOS</h1>
+            <p class="tagline">Your Trusted Automotive Partner</p>
+            <p class="user-welcome">Welcome, @AuthState.CurrentUser</p>
+        </div>
+        
+        <!-- Action Cards -->
+        <div class="action-cards">
+            <div class="action-card card" @onclick="ShowAddInvoiceForm" style="cursor: pointer;">
+                <h3>➕ Add New Invoice</h3>
+                <p>Create a new service invoice</p>
+            </div>
+            
+            <div class="action-card card" @onclick="GoToInvoices" style="cursor: pointer;">
+                <h3>📋 Existing Invoices</h3>
+                <p>View and manage all invoices</p>
+            </div>
+            
+            <div class="action-card card">
+                <h3>📊 Today's Entries</h3>
+                <p>@todayCount invoices created today</p>
+            </div>
+        </div>
+
+        <div class="contact-info">
+            <div class="info-card card">
+                <h3>📍 Locations</h3>
+                <p>174 Clarence Street Howrah, 7018</p>
+                <p>289-291 Main Road Glenorchy, 7010</p>
+            </div>
+            
+            <div class="info-card card">
+                <h3>📞 Contact</h3>
+                <p>0448277617</p>
+            </div>
+        </div>
+
+        <div class="welcome-message card">
+            <p>Welcome to Mama Autos - where quality meets reliability in automotive services.</p>
+        </div>
+    </div>
+}
+
+@if (showAddForm)
+{
+    <div class="modal-overlay" @onclick="CloseAddForm">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>Add New Invoice</h3>
+                <button @onclick="CloseAddForm" class="btn-close">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Branch Location</label>
+                    <select @bind="newInvoice.BranchAddress" class="form-control">
+                        <option value="">Select Branch</option>
+                        <option value="174 Clarence Street Howrah, 7018">Howrah Workshop</option>
+                        <option value="289-291 Main Road Glenorchy, 7010">Glenorchy Workshop</option>
+                    </select>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Customer Name</label>
+                        <input @bind="newInvoice.CustomerName" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <label>Customer Email</label>
+                        <input @bind="newInvoice.CustomerEmail" type="email" class="form-control" />
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Booking Date</label>
+                        <input @bind="newInvoice.BookingDate" type="date" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <label>Entry Date</label>
+                        <input @bind="newInvoice.EntryDate" type="date" class="form-control" />
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input @bind="newInvoice.Phone" class="form-control" />
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Vehicle Year</label>
+                        <input @bind="newInvoice.VehicleYear" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <label>Make</label>
+                        <input @bind="newInvoice.VehicleMake" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <label>Model</label>
+                        <input @bind="newInvoice.VehicleModel" class="form-control" />
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Registration Number</label>
+                    <input @bind="newInvoice.RegNo" class="form-control" />
+                </div>
+                
+                <div class="form-group">
+                    <label>Work Done</label>
+                    <textarea @bind="newInvoice.WorkDone" class="form-control" rows="3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Technician Recommendation</label>
+                    <textarea @bind="newInvoice.Recommendation" class="form-control" rows="2"></textarea>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button @onclick="CloseAddForm" class="btn btn-secondary">Cancel</button>
+                <button @onclick="SaveNewInvoice" class="btn btn-primary">Save Invoice</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool showAddForm = false;
+    private Invoice newInvoice = new();
+    private int todayCount = 0;
+    private bool showDropdown = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTodayCount();
+    }
+
+    private void Logout()
+    {
+        AuthState.Logout();
+        Navigation.NavigateTo("/login", forceLoad: true);
+    }
+
+    private async Task LoadTodayCount()
+    {
+        var invoices = await InvoiceService.GetAllInvoicesAsync();
+        todayCount = invoices.Count(i => i.EntryDate.Date == DateTime.Today);
+    }
+
+    private void ShowAddInvoiceForm()
+    {
+        newInvoice = new Invoice
+        {
+            BookingDate = DateTime.Today,
+            EntryDate = DateTime.Today
+        };
+        showAddForm = true;
+    }
+
+    private void CloseAddForm()
+    {
+        showAddForm = false;
+        newInvoice = new();
+    }
+
+    private async Task SaveNewInvoice()
+    {
+        InvoiceService.AddInvoice(newInvoice);
+        CloseAddForm();
+        await LoadTodayCount();
+        StateHasChanged();
+    }
+
+    private void GoToInvoices()
+    {
+        Navigation.NavigateTo("/invoices");
+    }
+}

@@ -1,0 +1,205 @@
+@page "/login"
+@using AutoMotiveProject.cs.Services
+@inject AuthService AuthService
+@inject AuthStateService AuthState
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Login - Mama Autos</PageTitle>
+
+<div class="login-container">
+    <div class="login-card">
+        @if (currentScreen == "login")
+        {
+            <div class="login-header">
+                <h2>MAMA AUTOS</h2>
+                <p>Login to Dashboard</p>
+            </div>
+
+            <div class="login-form">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input @bind="email" type="email" class="form-control" placeholder="Enter your email" />
+                </div>
+
+                <div class="form-group">
+                    <label>Password</label>
+                    <input @bind="password" type="password" class="form-control" placeholder="Enter your password" />
+                </div>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="error-message">@errorMessage</div>
+                }
+
+                <button @onclick="LoginUser" class="btn btn-primary">Login</button>
+                
+                <div style="text-align: center; margin-top: 15px;">
+                    <button type="button" @onclick="ShowForgotPassword" style="background: none; border: none; color: #666; text-decoration: underline; font-size: 14px; cursor: pointer;">Forgot Password?</button>
+                </div>
+            </div>
+        }
+        else if (currentScreen == "forgot")
+        {
+            <div class="login-header">
+                <h2>MAMA AUTOS</h2>
+                <p>Reset Password</p>
+            </div>
+
+            <div class="login-form">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input @bind="resetEmail" type="email" class="form-control" placeholder="Enter your email" />
+                </div>
+
+                @if (!string.IsNullOrEmpty(resetMessage))
+                {
+                    <div class="error-message">@resetMessage</div>
+                }
+
+                <button @onclick="VerifyEmail" class="btn btn-primary">Verify Email</button>
+                
+                <div style="text-align: center; margin-top: 15px;">
+                    <button type="button" @onclick="BackToLogin" style="background: none; border: none; color: #666; text-decoration: underline; font-size: 14px; cursor: pointer;">Back to Login</button>
+                </div>
+            </div>
+        }
+        else if (currentScreen == "reset")
+        {
+            <div class="login-header">
+                <h2>MAMA AUTOS</h2>
+                <p>Set New Password</p>
+            </div>
+
+            <div class="login-form">
+                <div class="form-group">
+                    <label>New Password</label>
+                    <input @bind="newPassword" type="password" class="form-control" placeholder="Enter new password" />
+                </div>
+
+                <div class="form-group">
+                    <label>Confirm Password</label>
+                    <input @bind="confirmPassword" type="password" class="form-control" placeholder="Confirm new password" />
+                </div>
+
+                @if (!string.IsNullOrEmpty(resetMessage))
+                {
+                    <div class="error-message">@resetMessage</div>
+                }
+
+                <button @onclick="UpdatePassword" class="btn btn-primary">Update Password</button>
+                
+                <div style="text-align: center; margin-top: 15px;">
+                    <button type="button" @onclick="BackToLogin" style="background: none; border: none; color: #666; text-decoration: underline; font-size: 14px; cursor: pointer;">Back to Login</button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private string email = "admin@mamaautos.com";
+    private string password = "admin123";
+    private string errorMessage = "";
+    private string currentScreen = "login";
+    private string resetEmail = "";
+    private string resetMessage = "";
+    private string newPassword = "";
+    private string confirmPassword = "";
+
+    private void LoginUser()
+    {
+        if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
+        {
+            errorMessage = "Please enter both email and password.";
+            return;
+        }
+
+        if (AuthService.ValidateUser(email, password))
+        {
+            AuthState.Login(email);
+            Navigation.NavigateTo("/", forceLoad: true);
+        }
+        else
+        {
+            errorMessage = "Invalid email or password.";
+        }
+    }
+
+    private void ShowForgotPassword()
+    {
+        currentScreen = "forgot";
+        errorMessage = "";
+        resetMessage = "";
+        StateHasChanged();
+    }
+
+    private void BackToLogin()
+    {
+        currentScreen = "login";
+        errorMessage = "";
+        resetMessage = "";
+        resetEmail = "";
+        newPassword = "";
+        confirmPassword = "";
+        StateHasChanged();
+    }
+
+    private void VerifyEmail()
+    {
+        if (string.IsNullOrEmpty(resetEmail))
+        {
+            resetMessage = "Please enter your email address.";
+            return;
+        }
+
+        if (AuthService.UserExists(resetEmail))
+        {
+            currentScreen = "reset";
+            resetMessage = "";
+            StateHasChanged();
+        }
+        else
+        {
+            resetMessage = "Email not found in our records.";
+        }
+    }
+
+    private void UpdatePassword()
+    {
+        if (string.IsNullOrEmpty(newPassword) || string.IsNullOrEmpty(confirmPassword))
+        {
+            resetMessage = "Please fill in both password fields.";
+            return;
+        }
+
+        if (newPassword != confirmPassword)
+        {
+            resetMessage = "Passwords do not match.";
+            return;
+        }
+
+        if (newPassword.Length < 6)
+        {
+            resetMessage = "Password must be at least 6 characters long.";
+            return;
+        }
+
+        if (AuthService.UpdatePassword(resetEmail, newPassword))
+        {
+            resetMessage = "Password updated successfully! You can now login.";
+            // Auto redirect to login after 2 seconds
+            Task.Delay(2000).ContinueWith(_ => 
+            {
+                InvokeAsync(() => 
+                {
+                    BackToLogin();
+                });
+            });
+        }
+        else
+        {
+            resetMessage = "Failed to update password. Please try again.";
+        }
+    }
+}

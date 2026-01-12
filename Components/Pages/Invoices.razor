@@ -1,0 +1,385 @@
+@page "/invoices"
+@using AutoMotiveProject.cs.Models
+@using AutoMotiveProject.cs.Services
+@inject InvoiceService InvoiceService
+@inject AuthStateService AuthState
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+@if (!AuthState.IsAuthenticated)
+{
+    <script>window.location.href = '/login';</script>
+}
+else
+{
+    <PageTitle>Invoices - Mama Autos</PageTitle>
+
+<div class="invoice-page">
+    <div class="page-header">
+        <h2>Invoice Management</h2>
+        <button @onclick="ShowAddForm" class="btn-add">
+            <span class="plus-icon">+</span> Add New Invoice
+        </button>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="filters-section card">
+        <div class="search-filters">
+            <div class="search-box">
+                <input @bind="searchTerm" @oninput="OnSearchChanged" placeholder="Search invoices..." class="form-control" />
+            </div>
+            <div class="filter-controls">
+                <select @bind="dateFilter" class="form-control">
+                    <option value="all">All Dates</option>
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                </select>
+                <input @bind="customerFilter" @oninput="OnCustomerFilterChanged" placeholder="Filter by customer" class="form-control" />
+            </div>
+        </div>
+    </div>
+
+    <div class="invoice-grid">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Invoice #</th>
+                    <th>Booking Date</th>
+                    <th>Entry Date</th>
+                    <th>Customer</th>
+                    <th>Vehicle</th>
+                    <th>Reg No</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (filteredInvoices != null)
+                {
+                    @foreach (var invoice in filteredInvoices)
+                    {
+                        <tr>
+                            <td>@invoice.InvoiceNumber</td>
+                            <td>@invoice.BookingDate.ToString("yyyy-MM-dd")</td>
+                            <td>@invoice.EntryDate.ToString("yyyy-MM-dd")</td>
+                            <td>@invoice.CustomerName</td>
+                            <td>@invoice.VehicleYear @invoice.VehicleMake @invoice.VehicleModel</td>
+                            <td>@invoice.RegNo</td>
+                            <td>
+                                <button @onclick="() => EditInvoice(invoice)" class="btn-action edit">✏️</button>
+                                <button @onclick="() => DeleteInvoice(invoice.Id)" class="btn-action delete">🗑️</button>
+                                <button @onclick="() => GeneratePdf(invoice)" class="btn-action pdf">📝</button>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr><td colspan="7">Loading...</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+}
+
+@if (showForm)
+{
+    <div class="modal-overlay" @onclick="CloseForm">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>@(editingInvoice != null ? "Edit Invoice" : "Add New Invoice")</h3>
+                <button @onclick="CloseForm" class="btn-close">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Branch Location</label>
+                    <select @bind="currentInvoice.BranchAddress" class="form-control">
+                        <option value="">Select Branch</option>
+                        <option value="174 Clarence Street Howrah, 7018">Howrah Workshop</option>
+                        <option value="289-291 Main Road Glenorchy, 7010">Glenorchy Workshop</option>
+                    </select>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Customer Name</label>
+                        <input @bind="currentInvoice.CustomerName" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <label>Customer Email</label>
+                        <input @bind="currentInvoice.CustomerEmail" type="email" class="form-control" />
+                        @if (!string.IsNullOrEmpty(emailError))
+                        {
+                            <div class="validation-error">@emailError</div>
+                        }
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Booking Date</label>
+                        <input @bind="currentInvoice.BookingDate" type="date" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <label>Entry Date</label>
+                        <input @bind="currentInvoice.EntryDate" type="date" class="form-control" />
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input @bind="currentInvoice.Phone" class="form-control" placeholder="04xxxxxxxx" />
+                    @if (!string.IsNullOrEmpty(phoneError))
+                    {
+                        <div class="validation-error">@phoneError</div>
+                    }
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Vehicle Year</label>
+                        <input @bind="currentInvoice.VehicleYear" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <label>Make</label>
+                        <input @bind="currentInvoice.VehicleMake" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <label>Model</label>
+                        <input @bind="currentInvoice.VehicleModel" class="form-control" />
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Registration Number</label>
+                    <input @bind="currentInvoice.RegNo" class="form-control" />
+                </div>
+                
+                <div class="form-group">
+                    <label>Work Done</label>
+                    <textarea @bind="currentInvoice.WorkDone" class="form-control" rows="3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Technician Recommendation</label>
+                    <textarea @bind="currentInvoice.Recommendation" class="form-control" rows="2"></textarea>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button @onclick="CloseForm" class="btn-cancel">Cancel</button>
+                <button @onclick="SaveInvoice" class="btn-done">Done</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Invoice>? invoices;
+    private List<Invoice>? filteredInvoices;
+    private Invoice currentInvoice = new();
+    private Invoice? editingInvoice = null;
+    private bool showForm = false;
+    private string emailError = "";
+    private string phoneError = "";
+    private string searchTerm = "";
+    private string _dateFilter = "all";
+    private string dateFilter 
+    { 
+        get => _dateFilter; 
+        set 
+        { 
+            _dateFilter = value; 
+            ApplyFilters(); 
+        } 
+    }
+    private string customerFilter = "";
+    private Timer? searchTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        invoices = await InvoiceService.GetAllInvoicesAsync();
+        ApplyFilters();
+    }
+
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? "";
+        searchTimer?.Dispose();
+        searchTimer = new Timer((_) => InvokeAsync(ApplyFilters), null, 300, Timeout.Infinite);
+    }
+
+    private void OnCustomerFilterChanged(ChangeEventArgs e)
+    {
+        customerFilter = e.Value?.ToString() ?? "";
+        ApplyFilters();
+    }
+
+    private void ApplyFilters()
+    {
+        if (invoices == null)
+        {
+            filteredInvoices = null;
+            return;
+        }
+
+        var filtered = invoices.AsEnumerable();
+
+        // Search filter
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var search = searchTerm.ToLower();
+            filtered = filtered.Where(i => 
+                i.InvoiceNumber.ToLower().Contains(search) ||
+                i.CustomerName.ToLower().Contains(search) ||
+                i.CustomerEmail.ToLower().Contains(search) ||
+                i.RegNo.ToLower().Contains(search) ||
+                i.VehicleMake.ToLower().Contains(search) ||
+                i.VehicleModel.ToLower().Contains(search));
+        }
+
+        // Customer filter
+        if (!string.IsNullOrWhiteSpace(customerFilter))
+        {
+            var customer = customerFilter.ToLower();
+            filtered = filtered.Where(i => i.CustomerName.ToLower().Contains(customer));
+        }
+
+        // Date filter
+        filtered = dateFilter switch
+        {
+            "today" => filtered.Where(i => i.EntryDate.Date == DateTime.Today),
+            "week" => filtered.Where(i => i.EntryDate.Date >= DateTime.Today.AddDays(-7)),
+            "month" => filtered.Where(i => i.EntryDate.Date >= DateTime.Today.AddDays(-30)),
+            _ => filtered
+        };
+
+        filteredInvoices = filtered.ToList();
+        StateHasChanged();
+    }
+
+    private void ShowAddForm()
+    {
+        currentInvoice = new();
+        editingInvoice = null;
+        ClearValidationErrors();
+        showForm = true;
+    }
+
+    private void EditInvoice(Invoice invoice)
+    {
+        editingInvoice = invoice;
+        currentInvoice = new()
+        {
+            Id = invoice.Id,
+            InvoiceNumber = invoice.InvoiceNumber,
+            CustomerName = invoice.CustomerName,
+            CustomerEmail = invoice.CustomerEmail,
+            Phone = invoice.Phone,
+            BookingDate = invoice.BookingDate,
+            EntryDate = invoice.EntryDate,
+            VehicleYear = invoice.VehicleYear,
+            VehicleMake = invoice.VehicleMake,
+            VehicleModel = invoice.VehicleModel,
+            RegNo = invoice.RegNo,
+            WorkDone = invoice.WorkDone,
+            Recommendation = invoice.Recommendation,
+            BranchAddress = invoice.BranchAddress
+        };
+        ClearValidationErrors();
+        showForm = true;
+    }
+
+    private async void SaveInvoice()
+    {
+        if (!ValidateForm()) return;
+
+        if (editingInvoice != null)
+        {
+            currentInvoice.Id = editingInvoice.Id;
+            InvoiceService.UpdateInvoice(currentInvoice);
+        }
+        else
+        {
+            InvoiceService.AddInvoice(currentInvoice);
+        }
+
+        CloseForm();
+        invoices = await InvoiceService.GetAllInvoicesAsync();
+        ApplyFilters();
+        StateHasChanged();
+    }
+
+    private bool ValidateForm()
+    {
+        ClearValidationErrors();
+        bool isValid = true;
+
+        // Email validation
+        if (string.IsNullOrEmpty(currentInvoice.CustomerEmail))
+        {
+            emailError = "Email is required";
+            isValid = false;
+        }
+        else if (!IsValidEmail(currentInvoice.CustomerEmail))
+        {
+            emailError = "Please enter a valid email address";
+            isValid = false;
+        }
+
+        // Phone validation
+        if (string.IsNullOrEmpty(currentInvoice.Phone))
+        {
+            phoneError = "Phone number is required";
+            isValid = false;
+        }
+        else if (!IsValidPhone(currentInvoice.Phone))
+        {
+            phoneError = "Please enter a valid Australian mobile number (04xxxxxxxx)";
+            isValid = false;
+        }
+
+        return isValid;
+    }
+
+    private bool IsValidEmail(string email)
+    {
+        return email.Contains("@") && email.Contains(".") && email.Length > 5;
+    }
+
+    private bool IsValidPhone(string phone)
+    {
+        return phone.StartsWith("04") && phone.Length == 10 && phone.All(char.IsDigit);
+    }
+
+    private void ClearValidationErrors()
+    {
+        emailError = "";
+        phoneError = "";
+    }
+
+    private void CloseForm()
+    {
+        showForm = false;
+        currentInvoice = new();
+        editingInvoice = null;
+        ClearValidationErrors();
+    }
+
+    private async void DeleteInvoice(int id)
+    {
+        InvoiceService.DeleteInvoice(id);
+        invoices = await InvoiceService.GetAllInvoicesAsync();
+        ApplyFilters();
+        StateHasChanged();
+    }
+
+    private void GeneratePdf(Invoice invoice)
+    {
+        // Generate PDF for the invoice
+        var pdfUrl = $"/api/invoice/{invoice.Id}/pdf";
+        Navigation.NavigateTo(pdfUrl, true);
+    }
+}

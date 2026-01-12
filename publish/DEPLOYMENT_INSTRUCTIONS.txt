@@ -1,0 +1,45 @@
+MAMA AUTOS - DEPLOYMENT PACKAGE
+================================
+
+FILES INCLUDED:
+- All application files (compiled .NET 8 app)
+- credentials.txt (login: admin@mamaautos.com / admin123)
+- service-account.json (TEMPLATE - needs your Google credentials)
+
+BEFORE DEPLOYMENT:
+1. Replace service-account.json with your actual Google Service Account file
+2. Update Google Sheets ID in GoogleSheetsDbService.cs if needed
+3. Add "Branch Address" column (column M) to your Google Sheet
+
+DEPLOYMENT OPTIONS:
+
+1. RAILWAY (Free):
+   - Install Railway CLI: npm install -g @railway/cli
+   - Run: railway login
+   - Run: railway init
+   - Run: railway up
+
+2. RENDER (Free):
+   - Create Dockerfile in this folder
+   - Upload to render.com
+
+3. VPS/Server:
+   - Install .NET 8 Runtime
+   - Upload all files
+   - Run: dotnet AutoMotiveProject.cs.dll --urls="http://0.0.0.0:80"
+
+GOOGLE SHEETS SETUP:
+- Column M should be "Branch Address"
+- Share sheet with service account email
+- Give Editor permissions
+
+LOGIN CREDENTIALS:
+Email: admin@mamaautos.com
+Password: admin123
+
+FEATURES:
+- Invoice management with branch selection
+- PDF generation with professional formatting
+- Google Sheets integration
+- Search and filtering
+- Password reset functionality

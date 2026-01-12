@@ -15,9 +15,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Components\" />
-    <Folder Include="Components\Layout\" />
-    <Folder Include="Components\Pages\" />
+    <Compile Include="Models\*.cs" />
+    <Compile Include="Services\*.cs" />
+    <Compile Include="Controllers\*.cs" />
   </ItemGroup>
 
 </Project>

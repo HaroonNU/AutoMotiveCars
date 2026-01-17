@@ -292,14 +292,14 @@ else
         showForm = true;
     }
 
-    private async void SaveInvoice()
+    private async Task SaveInvoice()
     {
         if (!ValidateForm()) return;
 
         if (editingInvoice != null)
         {
             currentInvoice.Id = editingInvoice.Id;
-            InvoiceService.UpdateInvoice(currentInvoice);
+            await InvoiceService.UpdateInvoice(currentInvoice);
         }
         else
         {

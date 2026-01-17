@@ -1,4 +1,4 @@
-using AutoMotiveProject.cs.Components;
+global using AutoMotiveProject.cs.Components;
 using AutoMotiveProject.cs.Services;
 
 namespace AutoMotiveProject.cs

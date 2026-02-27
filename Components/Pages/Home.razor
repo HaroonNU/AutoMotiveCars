@@ -44,6 +44,11 @@ else
                 <h3>📊 Today's Entries</h3>
                 <p>@todayCount invoices created today</p>
             </div>
+            <div class="action-card card">
+                <h3>📊 Today's Bookings</h3>
+                <p>@todayBookCount invoices booked for today</p>
+            </div>
+
         </div>
 
         <div class="contact-info">
@@ -154,11 +159,13 @@ else
     private bool showAddForm = false;
     private Invoice newInvoice = new();
     private int todayCount = 0;
+    private int todayBookCount = 0;
     private bool showDropdown = false;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadTodayCount();
+
     }
 
     private void Logout()
@@ -171,6 +178,7 @@ else
     {
         var invoices = await InvoiceService.GetAllInvoicesAsync();
         todayCount = invoices.Count(i => i.EntryDate.Date == DateTime.Today);
+        todayBookCount = invoices.Count(i => i.BookingDate.Date == DateTime.Today);
     }
 
     private void ShowAddInvoiceForm()

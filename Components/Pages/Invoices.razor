@@ -35,6 +35,13 @@ else
                     <option value="week">This Week</option>
                     <option value="month">This Month</option>
                 </select>
+                <select @bind="bookingFilter" class="form-control">
+                    <option value="all">All Bookings</option>
+                    <option value="today">Booked Today</option>
+                    <option value="tomorrow">Booked Tomorrow</option>
+                    <option value="thisweek">Booked This Week</option>
+                    <option value="nextweek">Booked Next Week</option>
+                </select>
                 <input @bind="customerFilter" @oninput="OnCustomerFilterChanged" placeholder="Filter by customer" class="form-control" />
             </div>
         </div>
@@ -195,6 +202,16 @@ else
             ApplyFilters(); 
         } 
     }
+    private string _bookingFilter = "today";
+    private string bookingFilter
+    {
+        get => _bookingFilter;
+        set
+        {
+            _bookingFilter = value;
+            ApplyFilters();
+        }
+    }
     private string customerFilter = "";
     private Timer? searchTimer;
 
@@ -256,13 +273,27 @@ else
             _ => filtered
         };
 
+        // Booking date filter
+        filtered = bookingFilter switch
+        {
+            "today" => filtered.Where(i => i.BookingDate.Date == DateTime.Today),
+            "tomorrow" => filtered.Where(i => i.BookingDate.Date == DateTime.Today.AddDays(1)),
+            "thisweek" => filtered.Where(i => i.BookingDate.Date >= DateTime.Today && i.BookingDate.Date <= DateTime.Today.AddDays(7 - (int)DateTime.Today.DayOfWeek)),
+            "nextweek" => filtered.Where(i => i.BookingDate.Date >= DateTime.Today.AddDays(7 - (int)DateTime.Today.DayOfWeek + 1) && i.BookingDate.Date <= DateTime.Today.AddDays(14 - (int)DateTime.Today.DayOfWeek)),
+            _ => filtered
+        };
+
         filteredInvoices = filtered.ToList();
         StateHasChanged();
     }
 
     private void ShowAddForm()
     {
-        currentInvoice = new();
+        currentInvoice = new()
+        {
+            BookingDate = DateTime.Today,
+            EntryDate = DateTime.Today
+        };
         editingInvoice = null;
         ClearValidationErrors();
         showForm = true;

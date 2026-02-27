@@ -153,10 +153,26 @@ namespace AutoMotiveProject.cs.Services
         {
             try
             {
-                var range = $"Sheet1!A{rowIndex + 2}:N{rowIndex + 2}";
-                var requestBody = new ClearValuesRequest();
-                var deleteRequest = _sheetsService.Spreadsheets.Values.Clear(requestBody, _spreadsheetId, range);
-                await deleteRequest.ExecuteAsync();
+                var deleteRequest = new Request
+                {
+                    DeleteDimension = new DeleteDimensionRequest
+                    {
+                        Range = new DimensionRange
+                        {
+                            SheetId = 0,
+                            Dimension = "ROWS",
+                            StartIndex = rowIndex + 1,
+                            EndIndex = rowIndex + 2
+                        }
+                    }
+                };
+
+                var batchRequest = new BatchUpdateSpreadsheetRequest
+                {
+                    Requests = new List<Request> { deleteRequest }
+                };
+
+                await _sheetsService.Spreadsheets.BatchUpdate(batchRequest, _spreadsheetId).ExecuteAsync();
             }
             catch
             {
